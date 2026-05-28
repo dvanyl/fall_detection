@@ -1,12 +1,14 @@
 // YOLOv8-Pose 人体跌倒检测系统 - USB摄像头实时检测
 // 基于RK3588 + RKNN + RGA硬件加速
 //
-// 用法: ./yolov8_fall_detect <model_path> [camera_id] [width] [height] [record]
-//   model_path: RKNN模型文件路径
-//   camera_id:  USB摄像头设备号 (默认0)
-//   width:      摄像头分辨率宽度 (默认640)
-//   height:     摄像头分辨率高度 (默认480)
-//   record:     是否录像保存 (0=否, 1=是, 默认0)
+// 用法: ./yolov8_fall_detect <model_path> [camera_id] [width] [height] [record] [headless] [stream_port]
+//   model_path:   RKNN模型文件路径
+//   camera_id:    USB摄像头设备号 (默认0)
+//   width:        摄像头分辨率宽度 (默认640)
+//   height:       摄像头分辨率高度 (默认480)
+//   record:       是否录像保存 (0=否, 1=是, 默认0)
+//   headless:     无显示器模式 (0=否, 1=是, 默认0)
+//   stream_port:  MJPEG推流端口 (0=禁用, 默认8080)
 
 #include <iostream>
 #include <string>
@@ -28,6 +30,7 @@
 #include "draw/cv_draw.h"
 #include "draw/fall_draw.h"
 #include "types/fall_datatype.h"
+#include "stream/mjpeg_server.h"
 #include "utils/logging.h"
 
 // 全局停止标志
@@ -209,9 +212,11 @@ void inferenceThread(Yolov8Custom& yolo, FallDetector& fall_detector,
 // ==================== 显示/处理线程 ====================
 void displayThread(SafeQueue<ResultData>& result_queue, bool record,
                    std::atomic<float>& inference_fps, std::atomic<float>& total_fps,
-                   bool headless = false)
+                   bool headless, MjpegServer* mjpeg_server)
 {
-    NN_LOG_INFO("Display thread started (headless=%s)", headless ? "true" : "false");
+    NN_LOG_INFO("Display thread started (headless=%s, stream=%s)",
+                headless ? "true" : "false",
+                mjpeg_server ? "enabled" : "disabled");
 
     cv::VideoWriter writer;
     if (record)
@@ -231,6 +236,10 @@ void displayThread(SafeQueue<ResultData>& result_queue, bool record,
             DrawFallResult(first_result.frame, first_result.fall_result);
             DrawFallDebugInfo(first_result.frame, first_result.fall_result);
             DrawFPS(first_result.frame, first_result.total_fps);
+
+            // MJPEG推流（第一帧）
+            if (mjpeg_server) mjpeg_server->PushFrame(first_result.frame);
+
             writer << first_result.frame;
         }
     }
@@ -272,6 +281,12 @@ void displayThread(SafeQueue<ResultData>& result_queue, bool record,
         cv::putText(result.frame, latency_ss.str(), cv::Point(10, result.frame.rows - 15),
                     cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(200, 200, 200), 1);
 
+        // MJPEG 推流（在录像和显示之前，使用绘制后的帧）
+        if (mjpeg_server != nullptr)
+        {
+            mjpeg_server->PushFrame(result.frame);
+        }
+
         // 录像
         if (record && writer.isOpened())
         {
@@ -285,11 +300,12 @@ void displayThread(SafeQueue<ResultData>& result_queue, bool record,
             // 每30帧输出一次状态日志
             if (log_interval % 30 == 0)
             {
-                NN_LOG_INFO("[Frame %d] FPS:%.1f, State:%s, FallScore:%.2f, Latency:%.1fms",
+                NN_LOG_INFO("[Frame %d] FPS:%.1f, State:%s, FallScore:%.2f, Latency:%.1fms, StreamClients:%d",
                             result.frame_id, smooth_fps,
                             result.fall_result.state_str.c_str(),
                             result.fall_result.fall_score,
-                            latency_ms);
+                            latency_ms,
+                            mjpeg_server ? mjpeg_server->GetClientCount() : 0);
             }
             // 跌倒报警时立即输出
             if (result.fall_result.is_alarm)
@@ -343,13 +359,18 @@ int main(int argc, char** argv)
         std::cout << "  Platform: RK3588 + RKNN + RGA" << std::endl;
         std::cout << "========================================" << std::endl;
         std::cout << "Usage: " << argv[0]
-                  << " <model_path> [camera_id] [width] [height] [record] [headless]" << std::endl;
-        std::cout << "  model_path: RKNN model file path (.rknn)" << std::endl;
-        std::cout << "  camera_id:  USB camera device id (default: 0)" << std::endl;
-        std::cout << "  width:      Camera resolution width (default: 640)" << std::endl;
-        std::cout << "  height:     Camera resolution height (default: 480)" << std::endl;
-        std::cout << "  record:     Save video (0=no, 1=yes, default: 0)" << std::endl;
-        std::cout << "  headless:   Headless mode without display (0=no, 1=yes, default: 0)" << std::endl;
+                  << " <model_path> [camera_id] [width] [height] [record] [headless] [stream_port]" << std::endl;
+        std::cout << "  model_path:   RKNN model file path (.rknn)" << std::endl;
+        std::cout << "  camera_id:    USB camera device id (default: 0)" << std::endl;
+        std::cout << "  width:        Camera resolution width (default: 640)" << std::endl;
+        std::cout << "  height:       Camera resolution height (default: 480)" << std::endl;
+        std::cout << "  record:       Save video (0=no, 1=yes, default: 0)" << std::endl;
+        std::cout << "  headless:     Headless mode without display (0=no, 1=yes, default: 0)" << std::endl;
+        std::cout << "  stream_port:  MJPEG stream port (0=disabled, default: 8080)" << std::endl;
+        std::cout << std::endl;
+        std::cout << "Example:" << std::endl;
+        std::cout << "  " << argv[0] << " ../weights/yolov8-pose-int.rknn 0 640 480 0 1 8080" << std::endl;
+        std::cout << "  Then open http://<board_ip>:8080/ in browser" << std::endl;
         return -1;
     }
 
@@ -359,6 +380,7 @@ int main(int argc, char** argv)
     int cam_height = argc > 4 ? atoi(argv[4]) : 480;
     bool record = argc > 5 ? (atoi(argv[5]) != 0) : false;
     bool headless = argc > 6 ? (atoi(argv[6]) != 0) : false;
+    int stream_port = argc > 7 ? atoi(argv[7]) : 8080;  // 默认 8080，0 表示禁用
 
     NN_LOG_INFO("========================================");
     NN_LOG_INFO("  YOLOv8-Pose Fall Detection System");
@@ -368,6 +390,7 @@ int main(int argc, char** argv)
     NN_LOG_INFO("Camera: %d (%dx%d)", camera_id, cam_width, cam_height);
     NN_LOG_INFO("Record: %s", record ? "Yes" : "No");
     NN_LOG_INFO("Headless: %s", headless ? "Yes" : "No");
+    NN_LOG_INFO("Stream: %s", stream_port > 0 ? ("port " + std::to_string(stream_port)).c_str() : "Disabled");
 
     try
     {
@@ -423,6 +446,19 @@ int main(int argc, char** argv)
         int actual_height = test_frame.rows;
         NN_LOG_INFO("Camera opened: %dx%d", actual_width, actual_height);
 
+        // 4. 启动 MJPEG 推流服务器
+        MjpegServer* mjpeg_server = nullptr;
+        if (stream_port > 0)
+        {
+            mjpeg_server = new MjpegServer(stream_port);
+            if (!mjpeg_server->Start())
+            {
+                NN_LOG_WARNING("Failed to start MJPEG server on port %d, streaming disabled", stream_port);
+                delete mjpeg_server;
+                mjpeg_server = nullptr;
+            }
+        }
+
         // ==================== 启动多线程流水线 ====================
         NN_LOG_INFO("Starting multi-thread pipeline...");
 
@@ -442,12 +478,18 @@ int main(int argc, char** argv)
                                  std::ref(frame_queue), std::ref(result_queue),
                                  std::ref(inference_fps), std::ref(total_fps));
         std::thread disp_thread(displayThread, std::ref(result_queue), record,
-                                std::ref(inference_fps), std::ref(total_fps), headless);
+                                std::ref(inference_fps), std::ref(total_fps),
+                                headless, mjpeg_server);
 
         if (headless)
             NN_LOG_INFO("All threads started. Running in headless mode (no display).");
         else
             NN_LOG_INFO("All threads started. Press ESC to exit.");
+
+        if (mjpeg_server)
+        {
+            NN_LOG_INFO("MJPEG stream available at: http://<board_ip>:%d/", stream_port);
+        }
 
         // 等待显示线程结束（用户按ESC或收到信号）
         disp_thread.join();
@@ -456,6 +498,14 @@ int main(int argc, char** argv)
         g_stop = true;
         if (read_thread.joinable()) read_thread.join();
         if (infer_thread.joinable()) infer_thread.join();
+
+        // 停止 MJPEG 服务器
+        if (mjpeg_server != nullptr)
+        {
+            mjpeg_server->Stop();
+            delete mjpeg_server;
+            mjpeg_server = nullptr;
+        }
 
         // 释放摄像头
         cap.release();

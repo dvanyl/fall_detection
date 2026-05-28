@@ -1,0 +1,13 @@
+/root/course_projs_dyl/fall_detection_deploy/build/CMakeFiles/nn_process.dir
+/root/course_projs_dyl/fall_detection_deploy/build/CMakeFiles/rknn_engine.dir
+/root/course_projs_dyl/fall_detection_deploy/build/CMakeFiles/yolov8_lib.dir
+/root/course_projs_dyl/fall_detection_deploy/build/CMakeFiles/draw_lib.dir
+/root/course_projs_dyl/fall_detection_deploy/build/CMakeFiles/fall_draw_lib.dir
+/root/course_projs_dyl/fall_detection_deploy/build/CMakeFiles/fall_detector_lib.dir
+/root/course_projs_dyl/fall_detection_deploy/build/CMakeFiles/mjpeg_stream_lib.dir
+/root/course_projs_dyl/fall_detection_deploy/build/CMakeFiles/yolov8_pose_img.dir
+/root/course_projs_dyl/fall_detection_deploy/build/CMakeFiles/yolov8_pose_video.dir
+/root/course_projs_dyl/fall_detection_deploy/build/CMakeFiles/yolov8_thread_pool.dir
+/root/course_projs_dyl/fall_detection_deploy/build/CMakeFiles/yolov8_fall_detect_usb.dir
+/root/course_projs_dyl/fall_detection_deploy/build/CMakeFiles/edit_cache.dir
+/root/course_projs_dyl/fall_detection_deploy/build/CMakeFiles/rebuild_cache.dir

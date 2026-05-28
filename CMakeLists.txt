@@ -85,6 +85,14 @@ target_link_libraries(fall_detector_lib
     ${OpenCV_LIBS}
 )
 
+# mjpeg_stream_lib - MJPEG HTTP推流服务器库
+add_library(mjpeg_stream_lib SHARED src/stream/mjpeg_server.cpp)
+# 链接库
+target_link_libraries(mjpeg_stream_lib
+    ${OpenCV_LIBS}
+    pthread
+)
+
 # 测试yolov8_img
 add_executable(yolov8_pose_img src/yolov8_pose_img.cpp)
 
@@ -115,7 +123,7 @@ target_link_libraries(yolov8_thread_pool
         yolov8_lib
 )
 
-# 跌倒检测系统 - USB摄像头实时检测
+# 跌倒检测系统 - USB摄像头实时检测（含MJPEG推流）
 add_executable(yolov8_fall_detect_usb src/yolov8_fall_detect_usb.cpp)
 
 # 链接库
@@ -123,6 +131,7 @@ target_link_libraries(yolov8_fall_detect_usb
         draw_lib
         fall_draw_lib
         fall_detector_lib
+        mjpeg_stream_lib
         yolov8_lib
         pthread
 )
