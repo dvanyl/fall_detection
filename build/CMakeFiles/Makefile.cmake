@@ -113,4 +113,5 @@ set(CMAKE_DEPEND_INFO_FILES
   "CMakeFiles/yolov8_pose_video.dir/DependInfo.cmake"
   "CMakeFiles/yolov8_thread_pool.dir/DependInfo.cmake"
   "CMakeFiles/yolov8_fall_detect_usb.dir/DependInfo.cmake"
+  "CMakeFiles/yolov8_fall_detect_tp.dir/DependInfo.cmake"
   )

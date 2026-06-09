@@ -74,6 +74,7 @@ all: CMakeFiles/yolov8_pose_img.dir/all
 all: CMakeFiles/yolov8_pose_video.dir/all
 all: CMakeFiles/yolov8_thread_pool.dir/all
 all: CMakeFiles/yolov8_fall_detect_usb.dir/all
+all: CMakeFiles/yolov8_fall_detect_tp.dir/all
 .PHONY : all
 
 # The main recursive "preinstall" target.
@@ -92,6 +93,7 @@ clean: CMakeFiles/yolov8_pose_img.dir/clean
 clean: CMakeFiles/yolov8_pose_video.dir/clean
 clean: CMakeFiles/yolov8_thread_pool.dir/clean
 clean: CMakeFiles/yolov8_fall_detect_usb.dir/clean
+clean: CMakeFiles/yolov8_fall_detect_tp.dir/clean
 .PHONY : clean
 
 #=============================================================================
@@ -154,7 +156,7 @@ CMakeFiles/yolov8_lib.dir/all: CMakeFiles/nn_process.dir/all
 CMakeFiles/yolov8_lib.dir/all: CMakeFiles/rknn_engine.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/yolov8_lib.dir/build.make CMakeFiles/yolov8_lib.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/yolov8_lib.dir/build.make CMakeFiles/yolov8_lib.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/root/course_projs_dyl/fall_detection_deploy/build/CMakeFiles --progress-num=16,17 "Built target yolov8_lib"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/root/course_projs_dyl/fall_detection_deploy/build/CMakeFiles --progress-num=19,20 "Built target yolov8_lib"
 .PHONY : CMakeFiles/yolov8_lib.dir/all
 
 # Build rule for subdir invocation for target.
@@ -287,7 +289,7 @@ CMakeFiles/yolov8_pose_img.dir/all: CMakeFiles/yolov8_lib.dir/all
 CMakeFiles/yolov8_pose_img.dir/all: CMakeFiles/draw_lib.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/yolov8_pose_img.dir/build.make CMakeFiles/yolov8_pose_img.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/yolov8_pose_img.dir/build.make CMakeFiles/yolov8_pose_img.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/root/course_projs_dyl/fall_detection_deploy/build/CMakeFiles --progress-num=18,19 "Built target yolov8_pose_img"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/root/course_projs_dyl/fall_detection_deploy/build/CMakeFiles --progress-num=21,22 "Built target yolov8_pose_img"
 .PHONY : CMakeFiles/yolov8_pose_img.dir/all
 
 # Build rule for subdir invocation for target.
@@ -316,7 +318,7 @@ CMakeFiles/yolov8_pose_video.dir/all: CMakeFiles/yolov8_lib.dir/all
 CMakeFiles/yolov8_pose_video.dir/all: CMakeFiles/draw_lib.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/yolov8_pose_video.dir/build.make CMakeFiles/yolov8_pose_video.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/yolov8_pose_video.dir/build.make CMakeFiles/yolov8_pose_video.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/root/course_projs_dyl/fall_detection_deploy/build/CMakeFiles --progress-num=20,21 "Built target yolov8_pose_video"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/root/course_projs_dyl/fall_detection_deploy/build/CMakeFiles --progress-num=23,24 "Built target yolov8_pose_video"
 .PHONY : CMakeFiles/yolov8_pose_video.dir/all
 
 # Build rule for subdir invocation for target.
@@ -345,7 +347,7 @@ CMakeFiles/yolov8_thread_pool.dir/all: CMakeFiles/yolov8_lib.dir/all
 CMakeFiles/yolov8_thread_pool.dir/all: CMakeFiles/draw_lib.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/yolov8_thread_pool.dir/build.make CMakeFiles/yolov8_thread_pool.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/yolov8_thread_pool.dir/build.make CMakeFiles/yolov8_thread_pool.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/root/course_projs_dyl/fall_detection_deploy/build/CMakeFiles --progress-num=22,23,24 "Built target yolov8_thread_pool"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/root/course_projs_dyl/fall_detection_deploy/build/CMakeFiles --progress-num=25,26,27 "Built target yolov8_thread_pool"
 .PHONY : CMakeFiles/yolov8_thread_pool.dir/all
 
 # Build rule for subdir invocation for target.
@@ -377,7 +379,7 @@ CMakeFiles/yolov8_fall_detect_usb.dir/all: CMakeFiles/fall_detector_lib.dir/all
 CMakeFiles/yolov8_fall_detect_usb.dir/all: CMakeFiles/mjpeg_stream_lib.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/yolov8_fall_detect_usb.dir/build.make CMakeFiles/yolov8_fall_detect_usb.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/yolov8_fall_detect_usb.dir/build.make CMakeFiles/yolov8_fall_detect_usb.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/root/course_projs_dyl/fall_detection_deploy/build/CMakeFiles --progress-num=14,15 "Built target yolov8_fall_detect_usb"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/root/course_projs_dyl/fall_detection_deploy/build/CMakeFiles --progress-num=17,18 "Built target yolov8_fall_detect_usb"
 .PHONY : CMakeFiles/yolov8_fall_detect_usb.dir/all
 
 # Build rule for subdir invocation for target.
@@ -395,6 +397,38 @@ yolov8_fall_detect_usb: CMakeFiles/yolov8_fall_detect_usb.dir/rule
 CMakeFiles/yolov8_fall_detect_usb.dir/clean:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/yolov8_fall_detect_usb.dir/build.make CMakeFiles/yolov8_fall_detect_usb.dir/clean
 .PHONY : CMakeFiles/yolov8_fall_detect_usb.dir/clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/yolov8_fall_detect_tp.dir
+
+# All Build rule for target.
+CMakeFiles/yolov8_fall_detect_tp.dir/all: CMakeFiles/nn_process.dir/all
+CMakeFiles/yolov8_fall_detect_tp.dir/all: CMakeFiles/rknn_engine.dir/all
+CMakeFiles/yolov8_fall_detect_tp.dir/all: CMakeFiles/yolov8_lib.dir/all
+CMakeFiles/yolov8_fall_detect_tp.dir/all: CMakeFiles/draw_lib.dir/all
+CMakeFiles/yolov8_fall_detect_tp.dir/all: CMakeFiles/fall_draw_lib.dir/all
+CMakeFiles/yolov8_fall_detect_tp.dir/all: CMakeFiles/fall_detector_lib.dir/all
+CMakeFiles/yolov8_fall_detect_tp.dir/all: CMakeFiles/mjpeg_stream_lib.dir/all
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/yolov8_fall_detect_tp.dir/build.make CMakeFiles/yolov8_fall_detect_tp.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/yolov8_fall_detect_tp.dir/build.make CMakeFiles/yolov8_fall_detect_tp.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/root/course_projs_dyl/fall_detection_deploy/build/CMakeFiles --progress-num=14,15,16 "Built target yolov8_fall_detect_tp"
+.PHONY : CMakeFiles/yolov8_fall_detect_tp.dir/all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/yolov8_fall_detect_tp.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /root/course_projs_dyl/fall_detection_deploy/build/CMakeFiles 18
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/yolov8_fall_detect_tp.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /root/course_projs_dyl/fall_detection_deploy/build/CMakeFiles 0
+.PHONY : CMakeFiles/yolov8_fall_detect_tp.dir/rule
+
+# Convenience name for target.
+yolov8_fall_detect_tp: CMakeFiles/yolov8_fall_detect_tp.dir/rule
+.PHONY : yolov8_fall_detect_tp
+
+# clean rule for target.
+CMakeFiles/yolov8_fall_detect_tp.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/yolov8_fall_detect_tp.dir/build.make CMakeFiles/yolov8_fall_detect_tp.dir/clean
+.PHONY : CMakeFiles/yolov8_fall_detect_tp.dir/clean
 
 #=============================================================================
 # Special targets to cleanup operation of make.

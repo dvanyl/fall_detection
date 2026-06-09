@@ -259,6 +259,19 @@ yolov8_fall_detect_usb/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/yolov8_fall_detect_usb.dir/build.make CMakeFiles/yolov8_fall_detect_usb.dir/build
 .PHONY : yolov8_fall_detect_usb/fast
 
+#=============================================================================
+# Target rules for targets named yolov8_fall_detect_tp
+
+# Build rule for target.
+yolov8_fall_detect_tp: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 yolov8_fall_detect_tp
+.PHONY : yolov8_fall_detect_tp
+
+# fast build rule for target.
+yolov8_fall_detect_tp/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/yolov8_fall_detect_tp.dir/build.make CMakeFiles/yolov8_fall_detect_tp.dir/build
+.PHONY : yolov8_fall_detect_tp/fast
+
 src/draw/cv_draw.o: src/draw/cv_draw.cpp.o
 .PHONY : src/draw/cv_draw.o
 
@@ -457,6 +470,7 @@ src/task/yolov8_thread_pool.o: src/task/yolov8_thread_pool.cpp.o
 # target to build an object file
 src/task/yolov8_thread_pool.cpp.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/yolov8_thread_pool.dir/build.make CMakeFiles/yolov8_thread_pool.dir/src/task/yolov8_thread_pool.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/yolov8_fall_detect_tp.dir/build.make CMakeFiles/yolov8_fall_detect_tp.dir/src/task/yolov8_thread_pool.cpp.o
 .PHONY : src/task/yolov8_thread_pool.cpp.o
 
 src/task/yolov8_thread_pool.i: src/task/yolov8_thread_pool.cpp.i
@@ -465,6 +479,7 @@ src/task/yolov8_thread_pool.i: src/task/yolov8_thread_pool.cpp.i
 # target to preprocess a source file
 src/task/yolov8_thread_pool.cpp.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/yolov8_thread_pool.dir/build.make CMakeFiles/yolov8_thread_pool.dir/src/task/yolov8_thread_pool.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/yolov8_fall_detect_tp.dir/build.make CMakeFiles/yolov8_fall_detect_tp.dir/src/task/yolov8_thread_pool.cpp.i
 .PHONY : src/task/yolov8_thread_pool.cpp.i
 
 src/task/yolov8_thread_pool.s: src/task/yolov8_thread_pool.cpp.s
@@ -473,7 +488,32 @@ src/task/yolov8_thread_pool.s: src/task/yolov8_thread_pool.cpp.s
 # target to generate assembly for a file
 src/task/yolov8_thread_pool.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/yolov8_thread_pool.dir/build.make CMakeFiles/yolov8_thread_pool.dir/src/task/yolov8_thread_pool.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/yolov8_fall_detect_tp.dir/build.make CMakeFiles/yolov8_fall_detect_tp.dir/src/task/yolov8_thread_pool.cpp.s
 .PHONY : src/task/yolov8_thread_pool.cpp.s
+
+src/yolov8_fall_detect_tp.o: src/yolov8_fall_detect_tp.cpp.o
+.PHONY : src/yolov8_fall_detect_tp.o
+
+# target to build an object file
+src/yolov8_fall_detect_tp.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/yolov8_fall_detect_tp.dir/build.make CMakeFiles/yolov8_fall_detect_tp.dir/src/yolov8_fall_detect_tp.cpp.o
+.PHONY : src/yolov8_fall_detect_tp.cpp.o
+
+src/yolov8_fall_detect_tp.i: src/yolov8_fall_detect_tp.cpp.i
+.PHONY : src/yolov8_fall_detect_tp.i
+
+# target to preprocess a source file
+src/yolov8_fall_detect_tp.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/yolov8_fall_detect_tp.dir/build.make CMakeFiles/yolov8_fall_detect_tp.dir/src/yolov8_fall_detect_tp.cpp.i
+.PHONY : src/yolov8_fall_detect_tp.cpp.i
+
+src/yolov8_fall_detect_tp.s: src/yolov8_fall_detect_tp.cpp.s
+.PHONY : src/yolov8_fall_detect_tp.s
+
+# target to generate assembly for a file
+src/yolov8_fall_detect_tp.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/yolov8_fall_detect_tp.dir/build.make CMakeFiles/yolov8_fall_detect_tp.dir/src/yolov8_fall_detect_tp.cpp.s
+.PHONY : src/yolov8_fall_detect_tp.cpp.s
 
 src/yolov8_fall_detect_usb.o: src/yolov8_fall_detect_usb.cpp.o
 .PHONY : src/yolov8_fall_detect_usb.o
@@ -585,6 +625,7 @@ help:
 	@echo "... mjpeg_stream_lib"
 	@echo "... nn_process"
 	@echo "... rknn_engine"
+	@echo "... yolov8_fall_detect_tp"
 	@echo "... yolov8_fall_detect_usb"
 	@echo "... yolov8_lib"
 	@echo "... yolov8_pose_img"
@@ -617,6 +658,9 @@ help:
 	@echo "... src/task/yolov8_thread_pool.o"
 	@echo "... src/task/yolov8_thread_pool.i"
 	@echo "... src/task/yolov8_thread_pool.s"
+	@echo "... src/yolov8_fall_detect_tp.o"
+	@echo "... src/yolov8_fall_detect_tp.i"
+	@echo "... src/yolov8_fall_detect_tp.s"
 	@echo "... src/yolov8_fall_detect_usb.o"
 	@echo "... src/yolov8_fall_detect_usb.i"
 	@echo "... src/yolov8_fall_detect_usb.s"

@@ -1,13 +1,13 @@
 
 #include "yolov8_thread_pool.h"
 #include "draw/cv_draw.h"
+
 // 构造函数
 Yolov8ThreadPool::Yolov8ThreadPool() { stop = false; }
 
 // 析构函数
 Yolov8ThreadPool::~Yolov8ThreadPool()
 {
-    // stop all threads
     stop = true;
     cv_task.notify_all();
     for (auto &thread : threads)
@@ -18,112 +18,136 @@ Yolov8ThreadPool::~Yolov8ThreadPool()
         }
     }
 }
-// 初始化：加载模型，创建线程，参数：模型路径，线程数量
+
+// 初始化：加载模型，创建线程
+// 默认3线程，对应RK3588的3个NPU核心
 nn_error_e Yolov8ThreadPool::setUp(std::string &model_path, int num_threads)
 {
-    // 遍历线程数量，创建模型实例，放入vector
-    // 这些线程加载的模型是同一个
+    NN_LOG_INFO("Yolov8ThreadPool: setting up with %d threads", num_threads);
+
+    // 为每个线程创建独立的模型实例（每个实例绑定独立的RKNN context）
     for (size_t i = 0; i < num_threads; ++i)
     {
         nn_model_type_e model_type = NN_YOLOV8_POSE;
         std::shared_ptr<Yolov8Custom> Yolov8 = std::make_shared<Yolov8Custom>(model_type);
-        Yolov8->LoadModel(model_path.c_str());
+        auto ret = Yolov8->LoadModel(model_path.c_str());
+        if (ret != NN_SUCCESS)
+        {
+            NN_LOG_ERROR("Yolov8ThreadPool: failed to load model for thread %zu", i);
+            return ret;
+        }
         Yolov8_instances.push_back(Yolov8);
+        NN_LOG_INFO("Yolov8ThreadPool: thread %zu model loaded", i);
     }
-    // 遍历线程数量，创建线程
+
+    // 创建工作线程
     for (size_t i = 0; i < num_threads; ++i)
     {
         threads.emplace_back(&Yolov8ThreadPool::worker, this, i);
     }
+
+    NN_LOG_INFO("Yolov8ThreadPool: %d worker threads started", num_threads);
     return NN_SUCCESS;
 }
 
-// 线程函数。参数：线程id
+// 工作线程函数
 void Yolov8ThreadPool::worker(int id)
 {
     while (!stop)
     {
         std::pair<int, cv::Mat> task;
-        std::shared_ptr<Yolov8Custom> instance = Yolov8_instances[id]; // 获取模型实例
+        std::shared_ptr<Yolov8Custom> instance = Yolov8_instances[id];
         {
-            // 获取任务
+            // 等待任务
             std::unique_lock<std::mutex> lock(mtx1);
-            cv_task.wait(lock, [&]
-                         { return !tasks.empty() || stop; });
+            cv_task.wait(lock, [&] { return !tasks.empty() || stop; });
 
-            if (stop)
-            {
-                return;
-            }
+            if (stop) return;
 
             task = tasks.front();
             tasks.pop();
         }
-        // 运行模型
+
+        // 运行模型推理（包含预处理 + NPU推理 + 后处理）
         std::vector<Detection> detections;
-        // 关键点
         std::vector<std::map<int, KeyPoint>> kps;
         instance->Run(task.second, detections, kps);
 
         {
-            // 保存结果
+            // 保存结果（检测框 + 关键点）
             std::lock_guard<std::mutex> lock(mtx2);
             results.insert({task.first, detections});
-            // 绘制检测框
-            DrawDetections(task.second, detections);
-            // 绘制关键点
-            DrawCocoKps(task.second, kps);
-            img_results.insert({task.first, task.second});
-            // cv_result.notify_one();
+            kp_results.insert({task.first, kps});
+            img_results.insert({task.first, task.second.clone()});
+            cv_result.notify_one();
         }
     }
 }
-// 提交任务，参数：图片，id（帧号）
+
+// 提交任务
 nn_error_e Yolov8ThreadPool::submitTask(const cv::Mat &img, int id)
 {
-    // 如果任务队列中的任务数量大于10，等待，避免内存占用过多
-    while (tasks.size() > 10)
+    // 限制任务队列大小，避免内存溢出
+    while (tasks.size() > 5)
     {
-        // sleep 1ms
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 
     {
-        // 保存任务
         std::lock_guard<std::mutex> lock(mtx1);
-        tasks.push({id, img});
+        tasks.push({id, img.clone()});
     }
     cv_task.notify_one();
     return NN_SUCCESS;
 }
 
-// 获取结果，参数：检测框，id（帧号）
+// 获取检测框结果
 nn_error_e Yolov8ThreadPool::getTargetResult(std::vector<Detection> &objects, int id)
 {
-    // 如果没有结果，等待
     while (results.find(id) == results.end())
     {
-        // sleep 1ms
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
     std::lock_guard<std::mutex> lock(mtx2);
     objects = results[id];
-    // remove from map
     results.erase(id);
+    kp_results.erase(id);
     img_results.erase(id);
-
-
     return NN_SUCCESS;
 }
 
-// 获取结果（图片），参数：图片，id（帧号）
+// 获取完整结果（检测框 + 关键点）
+nn_error_e Yolov8ThreadPool::getTargetResultFull(
+    std::vector<Detection> &objects,
+    std::vector<std::map<int, KeyPoint>> &keypoints,
+    int id)
+{
+    int loop_cnt = 0;
+    while (results.find(id) == results.end())
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+        loop_cnt++;
+        if (loop_cnt > 2500)  // 5秒超时
+        {
+            NN_LOG_ERROR("getTargetResultFull timeout for frame %d", id);
+            return NN_TIMEOUT;
+        }
+    }
+    std::lock_guard<std::mutex> lock(mtx2);
+    objects = results[id];
+    keypoints = kp_results[id];
+    results.erase(id);
+    kp_results.erase(id);
+    // 注意：不在这里删除 img_results，图片由 getTargetImgResult 独立获取和删除
+    return NN_SUCCESS;
+}
+
+// 获取图片结果
 nn_error_e Yolov8ThreadPool::getTargetImgResult(cv::Mat &img, int id)
 {
     int loop_cnt = 0;
-    // 如果没有结果，等待
     while (img_results.find(id) == img_results.end())
     {
-        // 等待 5ms x 1000 = 5s
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
         loop_cnt++;
         if (loop_cnt > 1000)
@@ -134,12 +158,19 @@ nn_error_e Yolov8ThreadPool::getTargetImgResult(cv::Mat &img, int id)
     }
     std::lock_guard<std::mutex> lock(mtx2);
     img = img_results[id];
-    // remove from map
     img_results.erase(id);
     results.erase(id);
-
+    kp_results.erase(id);
     return NN_SUCCESS;
 }
+
+// 获取待处理任务数
+int Yolov8ThreadPool::getTaskQueueSize() const
+{
+    // 注意：这里不加锁是因为只是用于统计监控
+    return tasks.size();
+}
+
 // 停止所有线程
 void Yolov8ThreadPool::stopAll()
 {

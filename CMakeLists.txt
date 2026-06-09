@@ -111,7 +111,7 @@ target_link_libraries(yolov8_pose_video
         yolov8_lib
 )
 
-# 测试自yolov8 thread pool
+# 测试yolov8 thread pool
 add_executable(yolov8_thread_pool
     src/yolov8_thread_pool.cpp
     src/task/yolov8_thread_pool.cpp
@@ -123,11 +123,27 @@ target_link_libraries(yolov8_thread_pool
         yolov8_lib
 )
 
-# 跌倒检测系统 - USB摄像头实时检测（含MJPEG推流）
+# 跌倒检测系统 - USB摄像头实时检测（单推理实例，含MJPEG推流）
 add_executable(yolov8_fall_detect_usb src/yolov8_fall_detect_usb.cpp)
 
 # 链接库
 target_link_libraries(yolov8_fall_detect_usb
+        draw_lib
+        fall_draw_lib
+        fall_detector_lib
+        mjpeg_stream_lib
+        yolov8_lib
+        pthread
+)
+
+# 跌倒检测系统 - 线程池加速版（多NPU核心并行，含MJPEG推流）
+add_executable(yolov8_fall_detect_tp
+    src/yolov8_fall_detect_tp.cpp
+    src/task/yolov8_thread_pool.cpp
+)
+
+# 链接库
+target_link_libraries(yolov8_fall_detect_tp
         draw_lib
         fall_draw_lib
         fall_detector_lib

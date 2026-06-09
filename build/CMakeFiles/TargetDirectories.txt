@@ -9,5 +9,6 @@
 /root/course_projs_dyl/fall_detection_deploy/build/CMakeFiles/yolov8_pose_video.dir
 /root/course_projs_dyl/fall_detection_deploy/build/CMakeFiles/yolov8_thread_pool.dir
 /root/course_projs_dyl/fall_detection_deploy/build/CMakeFiles/yolov8_fall_detect_usb.dir
+/root/course_projs_dyl/fall_detection_deploy/build/CMakeFiles/yolov8_fall_detect_tp.dir
 /root/course_projs_dyl/fall_detection_deploy/build/CMakeFiles/edit_cache.dir
 /root/course_projs_dyl/fall_detection_deploy/build/CMakeFiles/rebuild_cache.dir

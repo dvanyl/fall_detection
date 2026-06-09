@@ -2,9 +2,14 @@
 
 #include "preprocess.h"
 
+#include <mutex>
+
 #include "utils/logging.h"
 #include "im2d.h"
 #include "rga.h"
+
+// RGA硬件加速的全局互斥锁（RK3588 RGA不支持多线程并发访问）
+static std::mutex g_rga_mutex;
 
 // opencv 版本的 letterbox
 LetterBoxInfo letterbox(const cv::Mat &img, cv::Mat &img_letterbox, float wh_ratio)
@@ -96,6 +101,7 @@ void cvimg2tensor_rga(const cv::Mat &img, uint32_t width, uint32_t height, tenso
     cv::Mat img_rgb;
     cv::cvtColor(img, img_rgb, cv::COLOR_BGR2RGB);
 
+    std::lock_guard<std::mutex> rga_lock(g_rga_mutex);
     im_rect src_rect;
     im_rect dst_rect;
     memset(&src_rect, 0, sizeof(src_rect));
@@ -151,6 +157,7 @@ LetterBoxInfo letterbox_rga(const cv::Mat &img, cv::Mat &img_letterbox, float wh
     // rga add border
     img_letterbox = cv::Mat::zeros(letterbox_height, letterbox_width, CV_8UC3);
 
+    std::lock_guard<std::mutex> rga_lock(g_rga_mutex);
     im_rect src_rect;
     im_rect dst_rect;
     memset(&src_rect, 0, sizeof(src_rect));
