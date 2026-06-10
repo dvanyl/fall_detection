@@ -20,6 +20,7 @@ public:
     virtual const std::vector<tensor_attr_s> &GetInputShapes() = 0;                                                      // 获取输入张量的形状
     virtual const std::vector<tensor_attr_s> &GetOutputShapes() = 0;                                                     // 获取输出张量的形状
     virtual nn_error_e Run(std::vector<tensor_data_s> &inputs, std::vector<tensor_data_s> &outpus, bool want_float) = 0; // 运行模型
+    virtual nn_error_e SetCoreMask(int core_mask) { return NN_SUCCESS; }                                                 // 设置NPU核心掩码（默认空实现，仅RKNN引擎需要）
     
 };
 

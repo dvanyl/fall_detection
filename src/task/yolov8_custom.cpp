@@ -145,18 +145,27 @@ nn_error_e Yolov8Custom::Preprocess(const cv::Mat &img, const std::string proces
     // 比例
     float wh_ratio = (float)input_tensor_.attr.dims[2] / (float)input_tensor_.attr.dims[1];
 
-    // lettorbox
     if (process_type == "opencv")
     {
-        // BGR2RGB，resize，再放入input_tensor_中
+        // OpenCV纯CPU预处理
         letterbox_info_ = letterbox(img, image_letterbox, wh_ratio);
         cvimg2tensor(image_letterbox, input_tensor_.attr.dims[2], input_tensor_.attr.dims[1], input_tensor_);
     }
     else if (process_type == "rga")
     {
-        // rga resize
-        letterbox_info_ = letterbox_rga(img, image_letterbox, wh_ratio);
-        cvimg2tensor_rga(image_letterbox, input_tensor_.attr.dims[2], input_tensor_.attr.dims[1], input_tensor_);
+        // 优先使用RGA硬件加速，失败时自动降级到OpenCV
+        bool rga_ok = letterbox_rga(img, image_letterbox, wh_ratio, letterbox_info_);
+        if (rga_ok)
+        {
+            rga_ok = cvimg2tensor_rga(image_letterbox, input_tensor_.attr.dims[2], input_tensor_.attr.dims[1], input_tensor_);
+        }
+        if (!rga_ok)
+        {
+            // RGA失败，降级到OpenCV预处理
+            NN_LOG_WARNING("RGA preprocess failed, falling back to OpenCV");
+            letterbox_info_ = letterbox(img, image_letterbox, wh_ratio);
+            cvimg2tensor(image_letterbox, input_tensor_.attr.dims[2], input_tensor_.attr.dims[1], input_tensor_);
+        }
     }
 
     return NN_SUCCESS;

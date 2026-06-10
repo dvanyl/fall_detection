@@ -51,6 +51,8 @@ public:
                                     int id);                             // 获取完整结果（检测框+关键点）
     nn_error_e getTargetImgResult(cv::Mat &img, int id);                 // 获取结果（图片）
     int getTaskQueueSize() const;                                        // 获取待处理任务数
+    int getLatestResultId() const;                                       // 获取最新的已完成帧ID（用于帧跳过）
+    void cleanResultsUpTo(int id);                                       // 清理指定ID之前的所有结果（防止内存泄漏）
     void stopAll();                                                      // 停止所有线程
 };
 

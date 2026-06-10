@@ -232,7 +232,7 @@ void MjpegServer::PushFrame(const cv::Mat& frame)
 
     // 将帧编码为 JPEG
     std::vector<uchar> buf;
-    std::vector<int> params = {cv::IMWRITE_JPEG_QUALITY, 75};  // 质量75，平衡带宽和画质
+    std::vector<int> params = {cv::IMWRITE_JPEG_QUALITY, 50};  // 质量50，优先速度（浏览器中差异不明显）
     cv::imencode(".jpg", frame, buf, params);
 
     // 更新帧缓冲（只保留最新帧）

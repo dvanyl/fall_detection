@@ -88,6 +88,15 @@ void resultThread(Yolov8ThreadPool& pool, FallDetector& fall_detector,
 
     while (!g_stop)
     {
+        // 帧跳过优化：如果结果线程落后，跳到最新的已完成帧
+        int latest_id = pool.getLatestResultId();
+        if (latest_id > next_frame_id + 1)
+        {
+            // 跳过中间帧，直接到最新帧，清理被跳过帧的结果防止内存泄漏
+            pool.cleanResultsUpTo(latest_id);
+            next_frame_id = latest_id;
+        }
+
         // 获取推理结果
         std::vector<Detection> objects;
         std::vector<std::map<int, KeyPoint>> keypoints;
@@ -269,21 +278,46 @@ int main(int argc, char** argv)
 
         // ==================== 3. 打开摄像头 ====================
         NN_LOG_INFO("Opening camera %d...", camera_id);
-        cv::VideoCapture cap(camera_id);
-        if (!cap.isOpened())
+        cv::VideoCapture cap;
+        // 尝试多种后端打开摄像头：V4L2 → GStreamer → 默认
+        int backends[] = {cv::CAP_V4L2, cv::CAP_GSTREAMER, cv::CAP_ANY};
+        const char* backend_names[] = {"V4L2", "GStreamer", "ANY"};
+        bool camera_opened = false;
+        for (int b = 0; b < 3; b++)
         {
-            NN_LOG_ERROR("Failed to open camera %d", camera_id);
+            NN_LOG_INFO("Trying camera %d with %s backend...", camera_id, backend_names[b]);
+            cap.open(camera_id, backends[b]);
+            if (cap.isOpened())
+            {
+                NN_LOG_INFO("Camera opened with %s backend", backend_names[b]);
+                camera_opened = true;
+                break;
+            }
+            NN_LOG_WARNING("Failed to open camera with %s backend", backend_names[b]);
+        }
+        if (!camera_opened)
+        {
+            NN_LOG_ERROR("Failed to open camera %d with all backends", camera_id);
             return -1;
         }
         cap.set(cv::CAP_PROP_FRAME_WIDTH, cam_width);
         cap.set(cv::CAP_PROP_FRAME_HEIGHT, cam_height);
         cap.set(cv::CAP_PROP_BUFFERSIZE, 1);
 
+        // 读取首帧需要重试（USB摄像头通常需要预热时间）
         cv::Mat test_frame;
-        cap >> test_frame;
+        const int max_retries = 30;
+        for (int retry = 0; retry < max_retries; retry++)
+        {
+            cap >> test_frame;
+            if (!test_frame.empty())
+                break;
+            NN_LOG_INFO("Waiting for camera frame... (%d/%d)", retry + 1, max_retries);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
         if (test_frame.empty())
         {
-            NN_LOG_ERROR("Failed to read from camera %d", camera_id);
+            NN_LOG_ERROR("Failed to read from camera %d after %d retries", camera_id, max_retries);
             return -1;
         }
         NN_LOG_INFO("Camera opened: %dx%d", test_frame.cols, test_frame.rows);

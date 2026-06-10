@@ -181,6 +181,24 @@ nn_error_e RKEngine::Run(std::vector<tensor_data_s> &inputs, std::vector<tensor_
     return NN_SUCCESS;
 }
 
+// 设置NPU核心掩码
+nn_error_e RKEngine::SetCoreMask(int core_mask)
+{
+    if (!ctx_created_)
+    {
+        NN_LOG_ERROR("SetCoreMask: rknn context not created yet");
+        return NN_RKNN_INIT_FAIL;
+    }
+    int ret = rknn_set_core_mask(rknn_ctx_, (rknn_core_mask)core_mask);
+    if (ret < 0)
+    {
+        NN_LOG_ERROR("rknn_set_core_mask fail! ret=%d, core_mask=%d", ret, core_mask);
+        return NN_RKNN_INIT_FAIL;
+    }
+    NN_LOG_INFO("rknn_set_core_mask success! core_mask=%d", core_mask);
+    return NN_SUCCESS;
+}
+
 // 析构函数
 RKEngine::~RKEngine()
 {

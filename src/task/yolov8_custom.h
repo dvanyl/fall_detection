@@ -24,6 +24,9 @@ public:
     // 设置预处理类型："opencv" 或 "rga"（硬件加速）
     void SetPreprocessType(const std::string &type) { process_type_ = type; }
 
+    // 设置NPU核心掩码，用于绑定推理到指定NPU核心
+    nn_error_e SetCoreMask(int core_mask) { return engine_->SetCoreMask(core_mask); }
+
 private:
     nn_error_e Preprocess(const cv::Mat &img, const std::string process_type, cv::Mat &image_letterbox);
     nn_error_e Inference();

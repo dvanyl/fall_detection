@@ -13,8 +13,8 @@ struct LetterBoxInfo
 };
 
 LetterBoxInfo letterbox(const cv::Mat &img, cv::Mat &img_letterbox, float wh_ratio);
-LetterBoxInfo letterbox_rga(const cv::Mat& img, cv::Mat& img_letterbox, float wh_ratio);
+bool letterbox_rga(const cv::Mat& img, cv::Mat& img_letterbox, float wh_ratio, LetterBoxInfo& info);
 void cvimg2tensor(const cv::Mat &img, uint32_t width, uint32_t height, tensor_data_s &tensor);
-void cvimg2tensor_rga(const cv::Mat &img, uint32_t width, uint32_t height, tensor_data_s &tensor);
+bool cvimg2tensor_rga(const cv::Mat &img, uint32_t width, uint32_t height, tensor_data_s &tensor);
 
 #endif // RK3588_DEMO_PREPROCESS_H

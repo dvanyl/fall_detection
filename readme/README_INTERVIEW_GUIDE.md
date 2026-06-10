@@ -21,6 +21,9 @@
 12. [CMakeLists 构建系统](#十二cmakelists-构建系统)
 13. [模型训练与转换](#十三模型训练与转换)
 14. [面试高频问题汇总](#十四面试高频问题汇总)
+15. [项目优化历程](#十五项目优化历程)
+16. [1-2天学习计划](#十六1-2天学习计划)
+17. [学习路线建议](#十七学习路线建议)
 
 ---
 
@@ -792,7 +795,113 @@ calib_img_002.jpg
 
 ---
 
-## 十五、学习路线建议
+## 十五、项目优化历程
+
+### 15.1 模块代码地图
+
+| 模块 | 文件 | 代码行数 | 核心职责 |
+|------|------|---------|---------|
+| **主程序** | `src/yolov8_fall_detect_tp.cpp` | ~370行 | 线程编排、参数解析、信号处理 |
+| **线程池** | `src/task/yolov8_thread_pool.h/.cpp` | ~200行 | 任务队列、结果管理、帧跳过 |
+| **模型封装** | `src/task/yolov8_custom.h/.cpp` | ~270行 | 预处理→推理→后处理全流程 |
+| **NN引擎** | `src/engine/engine.h` + `rknn_engine.h/.cpp` | ~230行 | RKNN API封装 |
+| **预处理** | `src/process/preprocess.h/.cpp` | ~190行 | letterbox + resize (RGA/OpenCV) |
+| **后处理** | `src/process/postprocess.h/.cpp` | ~495行 | 解码 + NMS + 关键点提取 |
+| **跌倒检测** | `src/task/fall_detector.h/.cpp` | ~520行 | 6特征状态机算法 |
+| **绘制** | `src/draw/cv_draw.h/.cpp` + `fall_draw.h/.cpp` | ~260行 | 检测框+骨架+跌倒状态绘制 |
+| **推流** | `src/stream/mjpeg_server.h/.cpp` | ~440行 | HTTP MJPEG推流服务器 |
+| **数据类型** | `src/types/*.h` | ~180行 | 张量、检测、跌倒等数据结构 |
+
+### 15.2 性能优化历程
+
+#### 优化1：NPU核心绑定（方案A）
+
+**问题**：NPU负载严重不均 `Core0: 70%, Core1: 5%, Core2: 0%`
+
+**根因**：`rknn_init()` 使用 `RKNN_NPU_CORE_AUTO`，驱动将大部分任务分配到Core0
+
+**解决**：在 `rknn_init()` 之后调用 `rknn_set_core_mask()`，为3个线程分别绑定 `RKNN_NPU_CORE_0/1/2`
+
+**效果**：`Core0: 25%, Core1: 23%, Core2: 25%`（三核均衡）
+
+**面试亮点**：分层设计（engine.h接口 → rknn_engine.cpp实现 → yolov8_custom.h透传 → thread_pool.cpp使用）
+
+#### 优化2：RGA容错降级（方案B）
+
+**问题**：3线程并发访问RGA硬件，偶发 `rga_job_submit Bad address` 错误
+
+**解决**：
+- 移除全局互斥锁（恢复RGA并行）
+- RGA函数返回 `bool`（失败返回false，不再 `exit(-1)`）
+- 调用方检测失败后自动降级到OpenCV预处理
+
+**效果**：RGA正常时并行处理，偶发失败时透明降级，不影响功能
+
+**面试亮点**：容错降级模式（Graceful Degradation）
+
+#### 优化3：结果线程帧跳过（方案C）
+
+**问题**：结果线程逐帧处理，绘制+MJPEG编码耗时~40ms，跟不上30FPS的摄像头输入
+
+**解决**：
+- 新增 `getLatestResultId()` 获取最新已完成帧ID
+- 结果线程落后时跳到最新帧，清理被跳过帧防止内存泄漏
+- MJPEG编码质量从75降到50（编码速度提升~40%）
+
+**效果**：真实环境FPS从17提升到25.7（+51%）
+
+**面试亮点**：帧跳过机制 + 内存泄漏防护
+
+### 15.3 面试中的量化数据
+
+| 指标 | 优化前 | 优化后 | 提升幅度 |
+|------|--------|--------|---------|
+| NPU负载均衡度 | 70%/5%/0% | 25%/23%/25% | 三核均衡 |
+| 真实环境FPS | ~17 | ~25.7 | +51% |
+| RGA失败处理 | 程序崩溃 | 透明降级 | 可靠性提升 |
+| 结果线程积压 | 持续积压 | 帧跳过 | 延迟降低 |
+
+---
+
+## 十六、1-2天学习计划
+
+### Day 1：理解架构和核心流程
+
+**上午（3小时）**：
+1. 读 `src/yolov8_fall_detect_tp.cpp` 主程序，理解4类线程的创建和协作
+2. 读 `src/task/yolov8_thread_pool.h/.cpp`，理解生产者-消费者模型
+3. 画出完整的数据流图
+
+**下午（3小时）**：
+1. 读 `src/task/yolov8_custom.cpp` 的 `Run()` 方法，理解预处理→推理→后处理流程
+2. 读 `src/process/preprocess.cpp`，理解letterbox和resize
+3. 读 `src/process/postprocess.cpp`，理解YOLOv8解码和NMS
+
+**晚上（2小时）**：
+1. 读 `src/task/fall_detector.cpp`，理解6特征跌倒检测算法
+2. 读 `src/types/fall_datatype.h`，理解状态机和配置参数
+3. 总结：用自己的话描述整个系统的工作流程
+
+### Day 2：深入细节和面试准备
+
+**上午（3小时）**：
+1. 读 `src/engine/rknn_engine.cpp`，理解RKNN API调用流程
+2. 读 `src/stream/mjpeg_server.cpp`，理解HTTP推流实现
+3. 回顾所有优化文档（`docs/` 目录），理解每个优化的动机和效果
+
+**下午（3小时）**：
+1. 对照本文档的面试高频问题清单，逐一准备口头回答
+2. 画架构图（白板上能画出来）
+3. 准备3个"亮点故事"：NPU核心绑定、RGA容错降级、帧跳过优化
+
+**晚上（2小时）**：
+1. 模拟面试：让朋友问你上面的问题
+2. 整理不熟悉的知识点，重点复习
+3. 准备项目亮点的量化数据（FPS提升、NPU利用率提升等）
+
+---
+
+## 十七、学习路线建议
 
 ### 嵌入式 AI 部署方向
 

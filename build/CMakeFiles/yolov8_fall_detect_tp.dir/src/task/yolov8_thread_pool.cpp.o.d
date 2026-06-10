@@ -340,4 +340,5 @@ CMakeFiles/yolov8_fall_detect_tp.dir/src/task/yolov8_thread_pool.cpp.o: \
  /usr/include/c++/11/thread /usr/include/c++/11/bits/std_thread.h \
  /usr/include/c++/11/bits/this_thread_sleep.h \
  /usr/include/c++/11/condition_variable \
- /root/course_projs_dyl/fall_detection_deploy/src/draw/cv_draw.h
+ /root/course_projs_dyl/fall_detection_deploy/src/draw/cv_draw.h \
+ /root/course_projs_dyl/fall_detection_deploy/librknn_api/include/rknn_api.h

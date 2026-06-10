@@ -1,6 +1,7 @@
 
 #include "yolov8_thread_pool.h"
 #include "draw/cv_draw.h"
+#include "rknn_api.h"
 
 // 构造函数
 Yolov8ThreadPool::Yolov8ThreadPool() { stop = false; }
@@ -25,6 +26,13 @@ nn_error_e Yolov8ThreadPool::setUp(std::string &model_path, int num_threads)
 {
     NN_LOG_INFO("Yolov8ThreadPool: setting up with %d threads", num_threads);
 
+    // NPU核心掩码表：RK3588有3个NPU核心，每个线程绑定一个独立核心
+    static const int npu_core_masks[] = {
+        RKNN_NPU_CORE_0,   // 线程0 → NPU核心0 (值=1)
+        RKNN_NPU_CORE_1,   // 线程1 → NPU核心1 (值=2)
+        RKNN_NPU_CORE_2,   // 线程2 → NPU核心2 (值=4)
+    };
+
     // 为每个线程创建独立的模型实例（每个实例绑定独立的RKNN context）
     for (size_t i = 0; i < num_threads; ++i)
     {
@@ -36,8 +44,19 @@ nn_error_e Yolov8ThreadPool::setUp(std::string &model_path, int num_threads)
             NN_LOG_ERROR("Yolov8ThreadPool: failed to load model for thread %zu", i);
             return ret;
         }
+
+        // 绑定NPU核心：将每个模型实例绑定到独立的NPU核心，实现真正的三核并行推理
+        if (i < sizeof(npu_core_masks) / sizeof(npu_core_masks[0]))
+        {
+            ret = Yolov8->SetCoreMask(npu_core_masks[i]);
+            if (ret != NN_SUCCESS)
+            {
+                NN_LOG_WARNING("Yolov8ThreadPool: failed to set core mask for thread %zu, using AUTO", i);
+            }
+        }
+
         Yolov8_instances.push_back(Yolov8);
-        NN_LOG_INFO("Yolov8ThreadPool: thread %zu model loaded", i);
+        NN_LOG_INFO("Yolov8ThreadPool: thread %zu model loaded (NPU core %zu)", i, i);
     }
 
     // 创建工作线程
@@ -162,6 +181,45 @@ nn_error_e Yolov8ThreadPool::getTargetImgResult(cv::Mat &img, int id)
     results.erase(id);
     kp_results.erase(id);
     return NN_SUCCESS;
+}
+
+// 获取最新已完成帧ID（用于帧跳过）
+int Yolov8ThreadPool::getLatestResultId() const
+{
+    std::lock_guard<std::mutex> lock(const_cast<std::mutex&>(mtx2));
+    if (results.empty())
+        return -1;
+    return results.rbegin()->first;  // map按key排序，最后一个就是最大的
+}
+
+// 清理指定ID之前的所有结果（防止帧跳过时内存泄漏）
+void Yolov8ThreadPool::cleanResultsUpTo(int id)
+{
+    std::lock_guard<std::mutex> lock(mtx2);
+    // 清理 results 中 id 之前的条目
+    for (auto it = results.begin(); it != results.end(); )
+    {
+        if (it->first < id)
+            it = results.erase(it);
+        else
+            ++it;
+    }
+    // 清理 kp_results 中 id 之前的条目
+    for (auto it = kp_results.begin(); it != kp_results.end(); )
+    {
+        if (it->first < id)
+            it = kp_results.erase(it);
+        else
+            ++it;
+    }
+    // 清理 img_results 中 id 之前的条目
+    for (auto it = img_results.begin(); it != img_results.end(); )
+    {
+        if (it->first < id)
+            it = img_results.erase(it);
+        else
+            ++it;
+    }
 }
 
 // 获取待处理任务数
